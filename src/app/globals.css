@@ -1,26 +1,197 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ------------------------------------------------------------------
+   Design tokens (docs/DESIGN_SPEC.md §1)
+   ------------------------------------------------------------------ */
+@theme {
+  --color-ink: #0b0806;
+  --color-ink-raised: #15100b;
+  --color-ink-raised-2: #1a130d;
+  --color-cream: #f4ecdf;
+  --color-cream-card: #eadfcb;
+  --color-cream-border: #d4bc93;
+  --color-text: #f7f1e8;
+  --color-text-soft: #e6dac5;
+  --color-text-muted: #cdbda2;
+  --color-text-faint: #b9aa92;
+  --color-text-fainter: #a99b85;
+  --color-ink-text: #1a130b;
+  --color-cream-heading: #14100b;
+  --color-cream-body: #3a2f22;
+  --color-cream-label: #6b5a44;
+  --color-cream-accent: #9a6f2e;
+  --color-gold: #d9b073;
+  --color-gold-line: rgb(217 176 115 / 0.24);
+  --color-gold-line-strong: rgb(217 176 115 / 0.5);
+  --color-glass-bg: rgb(26 19 13 / 0.55);
+  --color-glass-border: rgb(255 255 255 / 0.13);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-body: var(--font-jost), system-ui, sans-serif;
+  --font-script: var(--font-pinyon), cursive;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --ease-editorial: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  --animate-shimmer: shimmer 8s linear infinite;
+  --animate-fade-up: fade-up 1s var(--ease-editorial) both;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-scroll-line: scroll-line 2.6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2.2s ease-out infinite;
+
+  @keyframes shimmer {
+    from { background-position: 0% 0; }
+    to { background-position: -220% 0; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes scroll-line {
+    0% { transform: scaleY(0); transform-origin: top; }
+    45% { transform: scaleY(1); transform-origin: top; }
+    55% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+  @keyframes pulse-ring {
+    from { transform: scale(1); opacity: 0.7; }
+    to { transform: scale(2.6); opacity: 0; }
   }
 }
 
+:root {
+  /* Single tweakable accent: every gold gradient is built from it. */
+  --accent: #d9b073;
+  --gold-text-gradient: linear-gradient(110deg, #8f6c36 0%, var(--accent) 36%, #f6e2b8 52%, var(--accent) 68%, #8f6c36 100%);
+  --gold-button-gradient: linear-gradient(135deg, #f3ddb0 0%, var(--accent) 48%, #b98a4a 100%);
+  --gold-glow: 0 14px 34px rgb(217 176 115 / 0.38);
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+html {
+  overflow-x: clip;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgb(217 176 115 / 0.35);
+  color: var(--color-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+/* Sections focused programmatically after in-page navigation */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* ------------------------------------------------------------------
+   Reusable surfaces and text treatments
+   ------------------------------------------------------------------ */
+@utility glass {
+  background: var(--color-glass-bg);
+  border: 1px solid var(--color-glass-border);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+@utility gold-shimmer {
+  background-image: var(--gold-text-gradient);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: var(--animate-shimmer);
+}
+
+@utility gold-fill {
+  background-image: var(--gold-button-gradient);
+}
+
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  &::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    flex: none;
+    background: var(--color-gold);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility lift {
+  transition:
+    transform 0.35s var(--ease-editorial),
+    box-shadow 0.35s var(--ease-editorial),
+    background-color 0.35s var(--ease-editorial),
+    border-color 0.35s var(--ease-editorial);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--gold-glow);
+  }
+}
+
+/* Native <dialog> sheets */
+dialog::backdrop {
+  background: rgb(11 8 6 / 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* ------------------------------------------------------------------
+   Reduced motion: no shimmer, marquee, float, pulse or entrance motion.
+   Elements rest in their final state because animations use fill "both".
+   ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  .gold-shimmer {
+    background-position: 30% 0;
+  }
 }
