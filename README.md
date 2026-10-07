@@ -32,9 +32,14 @@ npm run build && npx next start -p 3100
 `seed.dev.sql` demo photos for local use only). `npm run db:types` regenerates
 `src/types/database.ts` after a schema change.
 
-**Preview link:** https://janmitha.187-126-118-80.sslip.io (Caddy on the VPS proxies to
-`next start -H 127.0.0.1 -p 3100`; the site block is at the end of `/etc/caddy/Caddyfile` and
-sends `noindex`). After `npm run build`, restart that process to publish changes.
+**Preview link:** https://janmitha.187-126-118-80.sslip.io, served by the `webapp@janmitha`
+systemd service (port 3008, runs as the unprivileged `webapp` user, starts on boot) behind Caddy.
+Production env lives in `/opt/deploy/env/janmitha.env`, not in the repo. To publish changes:
+
+```bash
+scripts/deploy-vps.sh     # sync to /opt/projects/janmitha/app, npm ci, build, restart
+journalctl -u webapp@janmitha -f
+```
 
 Viewing from your own computer without opening any ports:
 
