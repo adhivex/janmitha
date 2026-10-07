@@ -31,6 +31,9 @@ echo "==> Build"
 echo "### $(date -Is) build" >>"$LOG"
 npm run build >>"$LOG" 2>&1 || { echo "Build failed, see $LOG" >&2; tail -30 "$LOG" >&2; exit 1; }
 
+# Resized images are cached by URL; drop them so replaced files in public/ show up.
+rm -rf "$DEST/.next/cache/images"
+
 # The app runs as the unprivileged webapp user, which may only write to .next.
 chown -R webapp:webapp "$DEST/.next"
 

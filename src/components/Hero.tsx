@@ -26,7 +26,7 @@ export function Hero({ profile }: { profile: Profile }) {
           className="object-cover object-[62%_18%]"
         />
         {/* md+: soften the photo's left edge into the ink background */}
-        <div className="absolute inset-0 hidden bg-[linear-gradient(90deg,var(--color-ink),transparent_40%)] md:block" />
+        <div className="absolute inset-0 hidden bg-[linear-gradient(90deg,var(--color-ink),rgb(11_8_6/0.88)_30%,transparent_54%)] md:block" />
       </div>
       {/* Legibility overlay + soft gold glow */}
       <div

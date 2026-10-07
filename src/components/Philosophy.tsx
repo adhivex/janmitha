@@ -27,7 +27,7 @@ export function Philosophy({ profile }: { profile: Profile }) {
           alt=""
           fill
           sizes="100vw"
-          className="object-cover object-[28%_center] md:object-center"
+          className="object-cover object-center"
         />
         <div
           aria-hidden="true"

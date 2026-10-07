@@ -13,7 +13,7 @@ export default async function ProfileAdmin() {
   return (
     <div className="grid gap-5">
       <h1 className="font-display text-[40px] leading-tight font-medium">Profile</h1>
-      <ActionForm action={saveProfile} className="grid gap-5" resetOnSuccess messageClassName="sticky bottom-[4.25rem] z-10 ml-auto w-fit rounded-full border border-glass-border bg-ink px-4 py-2">
+      <ActionForm action={saveProfile} className="grid gap-5" resetOnSuccess>
         <Panel title="Hero">
           <div className="grid gap-4">
             <Field label="Display name" name="display_name" defaultValue={p.display_name} required maxLength={60} />

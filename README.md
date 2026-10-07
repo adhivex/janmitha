@@ -56,7 +56,7 @@ See `.env.example`. Server-only secrets: `SUPABASE_SERVICE_ROLE_KEY` (used only 
 
 - **Resend** not set: enquiries are still saved; email is skipped with a log line.
 - **Turnstile** not set: check skipped in development, rejected in production.
-  Cloudflare's always-pass test keys are fine for local testing.
+  Cloudflare's invisible always-pass test keys (see `.env.example`) are fine for previews.
 - Edits made directly in Supabase (not via /admin) show up within 5 minutes, or immediately with
   `curl -X POST -H "x-revalidate-secret: $REVALIDATE_SECRET" https://<site>/api/revalidate`.
 

@@ -7,7 +7,7 @@ import { btn } from "./ui";
 type Props = {
   url: string | null;
   label: string;
-  /** Shown inside the dialog while the video URL has not been supplied yet. */
+  /** Tooltip on the disabled button while the video URL has not been supplied yet. */
   placeholder: string;
   className?: string;
 };
@@ -27,6 +27,24 @@ export function VideoDialog({ url, label, placeholder, className = "" }: Props) 
   // Only mount the player while open so closing the dialog stops playback.
   const [open, setOpen] = useState(false);
   const embed = url && open ? toEmbed(url) : null;
+
+  // Spec: without a video URL the button is shown disabled rather than opening an empty player.
+  if (!url) {
+    return (
+      <button
+        type="button"
+        disabled
+        title={placeholder}
+        className={`${btn.ghostBase.replace("lift ", "")} cursor-not-allowed opacity-60 ${className || "pr-6 pl-2 tracking-[0.2em]"}`}
+      >
+        <span className="gold-fill inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-text">
+          <Play className="ml-0.5 h-4 w-4" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        </span>
+        {label}
+        <span className="sr-only">(coming soon)</span>
+      </button>
+    );
+  }
 
   return (
     <>
@@ -75,12 +93,6 @@ export function VideoDialog({ url, label, placeholder, className = "" }: Props) 
                 allowFullScreen
                 className="h-full w-full border-0"
               />
-            )}
-            {!url && (
-              <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-                <p className="eyebrow">{label}</p>
-                <p className="font-display text-[28px] italic text-text-soft">{placeholder}</p>
-              </div>
             )}
           </div>
         </div>

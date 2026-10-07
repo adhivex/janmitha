@@ -1,5 +1,6 @@
 import { Download, Mail, MapPin } from "lucide-react";
 import type { Profile } from "@/lib/content";
+import { isRealValue } from "@/lib/site";
 import { toSiteHref } from "@/lib/supabase/config";
 import { EnquiryDialog } from "./EnquiryDialog";
 import { InstagramIcon, LinkedInIcon, btn } from "./ui";
@@ -7,11 +8,11 @@ import { InstagramIcon, LinkedInIcon, btn } from "./ui";
 const FOCUS_AREAS = ["Fashion", "Technology", "Lifestyle", "Positive Impact"];
 
 export function Contact({ profile }: { profile: Profile }) {
-  const email = profile.email ?? "[HER EMAIL]";
+  // Unfilled values like "[HANDLE]" stay visible as a tooltip but are not linked.
   const socials = [
-    { href: profile.instagram_url ?? "https://instagram.com/[HANDLE]", label: "Instagram", Icon: InstagramIcon, external: true },
-    { href: profile.linkedin_url ?? "https://linkedin.com/in/[HANDLE]", label: "LinkedIn", Icon: LinkedInIcon, external: true },
-    { href: `mailto:${email}`, label: "Email", Icon: Mail, external: false },
+    { value: profile.instagram_url, href: profile.instagram_url, placeholder: "[INSTAGRAM URL]", label: "Instagram", Icon: InstagramIcon, external: true },
+    { value: profile.linkedin_url, href: profile.linkedin_url, placeholder: "[LINKEDIN URL]", label: "LinkedIn", Icon: LinkedInIcon, external: true },
+    { value: profile.email, href: `mailto:${profile.email}`, placeholder: "[HER EMAIL]", label: "Email", Icon: Mail, external: false },
   ];
 
   return (
@@ -57,16 +58,27 @@ export function Contact({ profile }: { profile: Profile }) {
           </div>
 
           <ul className="mt-8 flex justify-center gap-3" aria-label="Social links">
-            {socials.map(({ href, label, Icon, external }) => (
+            {socials.map(({ value, href, placeholder, label, Icon, external }) => (
               <li key={label}>
-                <a
-                  href={href}
-                  aria-label={label}
-                  {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className={`${btn.iconCircle} h-[50px] w-[50px] border-gold-line-strong text-gold hover:border-gold hover:bg-gold hover:text-ink-text`}
-                >
-                  <Icon className="h-5 w-5" strokeWidth={1.5} />
-                </a>
+                {isRealValue(value) ? (
+                  <a
+                    href={href ?? undefined}
+                    aria-label={label}
+                    {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className={`${btn.iconCircle} h-[50px] w-[50px] border-gold-line-strong text-gold hover:border-gold hover:bg-gold hover:text-ink-text`}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+                  </a>
+                ) : (
+                  <span
+                    role="img"
+                    aria-label={`${label} (coming soon)`}
+                    title={value ?? placeholder}
+                    className={`${btn.iconCircle} h-[50px] w-[50px] cursor-not-allowed border-gold-line-strong text-gold opacity-50`}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+                  </span>
+                )}
               </li>
             ))}
           </ul>

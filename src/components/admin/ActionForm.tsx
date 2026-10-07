@@ -3,6 +3,7 @@
 import { LoaderCircle } from "lucide-react";
 import { createContext, startTransition, use, useActionState, useEffect, useRef, useState } from "react";
 import type { ActionState } from "@/lib/admin/types";
+import { ToastContext } from "./Toast";
 
 type Action = (prev: ActionState, formData: FormData) => Promise<ActionState>;
 
@@ -28,7 +29,14 @@ export function ActionForm({
   resetOnSuccess?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, dispatch, pending] = useActionState(action, null);
+  const toast = use(ToastContext);
+  // Report through the toast as soon as the server answers: the form itself may be
+  // removed in the same update (e.g. after "Delete"), so an effect would never run.
+  const [state, dispatch, pending] = useActionState(async (prev: ActionState, formData: FormData) => {
+    const result = await action(prev, formData);
+    if (result) toast?.(result);
+    return result;
+  }, null);
   const [submitter, setSubmitter] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,13 +58,16 @@ export function ActionForm({
       }}
     >
       <FormStatus value={{ pending, submitter }}>{children}</FormStatus>
-      <p
-        role="status"
-        aria-live="polite"
-        className={`min-h-[1.25em] text-[13px] empty:hidden ${state?.ok ? "text-[#A9D9B0]" : "text-[#F2B8A2]"} ${messageClassName}`}
-      >
-        {pending ? "" : state?.message}
-      </p>
+      {/* Inside the admin the layout's toast shows the message; elsewhere (login) it shows inline. */}
+      {!toast && (
+        <p
+          role="status"
+          aria-live="polite"
+          className={`min-h-[1.25em] text-[13px] empty:hidden ${state?.ok ? "text-[#A9D9B0]" : "text-[#F2B8A2]"} ${messageClassName}`}
+        >
+          {pending ? "" : state?.message}
+        </p>
+      )}
     </form>
   );
 }

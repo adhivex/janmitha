@@ -163,7 +163,7 @@ export function EnquiryForm() {
         {errors.message && <p id="enquiry-message-error" className={errorText}>{errors.message.message}</p>}
       </div>
 
-      {SITE_KEY && <div ref={widgetRef} className="min-h-[65px] md:col-span-2" />}
+      {SITE_KEY && <div ref={widgetRef} className="md:col-span-2" />}
 
       <div className="md:col-span-2">
         <button
