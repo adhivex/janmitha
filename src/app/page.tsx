@@ -7,7 +7,7 @@ import { Hero } from "@/components/Hero";
 import { Philosophy } from "@/components/Philosophy";
 import { PortfolioRail } from "@/components/PortfolioRail";
 import { StatsBar } from "@/components/StatsBar";
-import { getHomeContent } from "@/lib/content";
+import { getHomeContent } from "@/lib/queries";
 
 export default async function HomePage() {
   const { profile, stats, brands, services, categories } = await getHomeContent();

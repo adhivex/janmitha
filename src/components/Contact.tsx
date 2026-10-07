@@ -1,5 +1,6 @@
 import { Download, Mail, MapPin } from "lucide-react";
 import type { Profile } from "@/lib/content";
+import { toSiteHref } from "@/lib/supabase/config";
 import { EnquiryForm } from "./EnquiryForm";
 import { InstagramIcon, LinkedInIcon, btn } from "./ui";
 
@@ -42,7 +43,7 @@ export function Contact({ profile }: { profile: Profile }) {
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               {profile.media_kit_url ? (
-                <a href={profile.media_kit_url} download className={btn.ghost}>
+                <a href={toSiteHref(profile.media_kit_url)} download className={btn.ghost}>
                   <Download className="h-4 w-4 text-gold" strokeWidth={1.5} aria-hidden="true" />
                   Media Kit
                 </a>

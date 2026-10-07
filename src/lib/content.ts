@@ -1,85 +1,22 @@
 /**
  * Static content fallback.
  *
- * Every type mirrors a table in supabase/migrations/0001_init.sql (same column
- * names), and the values mirror supabase/seed.sql. In Phase 2 `getHomeContent`
- * reads from Supabase and falls back to this data when env vars are missing or
- * a query fails.
+ * Types come from the generated Supabase schema (src/types/database.ts) and the
+ * values mirror supabase/seed.sql. src/lib/queries.ts reads from Supabase and
+ * falls back to this data when env vars are missing or a query fails.
  *
  * Values in [BRACKETS] are placeholders the client still has to supply.
  * Stats and brand names come from the client's reference: confirm before launch.
  */
 
-export type Profile = {
-  id: number;
-  display_name: string;
-  hero_eyebrow: string | null;
-  hero_intro: string | null;
-  tagline: string | null;
-  bio: string | null;
-  beyond_frame: string | null;
-  city: string | null;
-  email: string | null;
-  instagram_url: string | null;
-  linkedin_url: string | null;
-  showreel_url: string | null;
-  story_video_url: string | null;
-  media_kit_url: string | null;
-  hero_image_url: string | null;
-  about_image_url: string | null;
-  philosophy_image_url: string | null;
-  philosophy_headline: string | null;
-  philosophy_sub: string | null;
-  philosophy_quote: string | null;
-  updated_at: string;
-};
+import type { Tables } from "@/types/database";
 
-export type Stat = {
-  id: string;
-  label: string;
-  value: string;
-  sort_order: number;
-  is_visible: boolean;
-};
-
-export type Brand = {
-  id: string;
-  name: string;
-  logo_url: string | null;
-  sort_order: number;
-  is_visible: boolean;
-};
-
-export type Service = {
-  id: string;
-  title: string;
-  description: string;
-  sort_order: number;
-  is_visible: boolean;
-};
-
-export type PortfolioCategory = {
-  id: string;
-  slug: string;
-  title: string;
-  cover_url: string | null;
-  sort_order: number;
-  is_visible: boolean;
-};
-
-export type PortfolioItem = {
-  id: string;
-  category_id: string;
-  brand_id: string | null;
-  image_url: string;
-  alt_text: string;
-  caption: string | null;
-  year: number | null;
-  is_featured: boolean;
-  is_visible: boolean;
-  sort_order: number;
-  created_at: string;
-};
+export type Profile = Tables<"profile">;
+export type Stat = Tables<"stats">;
+export type Brand = Tables<"brands">;
+export type Service = Tables<"services">;
+export type PortfolioCategory = Tables<"portfolio_categories">;
+export type PortfolioItem = Tables<"portfolio_items">;
 
 export type HomeContent = {
   profile: Profile;
@@ -189,16 +126,28 @@ export const categories: PortfolioCategory[] = [
   is_visible: true,
 }));
 
-const visibleSorted = <T extends { is_visible: boolean; sort_order: number }>(rows: T[]) =>
+export const visibleSorted = <T extends { is_visible: boolean; sort_order: number }>(rows: T[]) =>
   rows.filter((r) => r.is_visible).sort((a, b) => a.sort_order - b.sort_order);
 
-/** Single entry point for home page content. Phase 2 swaps the body for Supabase queries. */
-export async function getHomeContent(): Promise<HomeContent> {
-  return {
-    profile,
-    stats: visibleSorted(stats),
-    brands: visibleSorted(brands),
-    services: visibleSorted(services),
-    categories: visibleSorted(categories),
-  };
-}
+export const fallbackHomeContent: HomeContent = {
+  profile,
+  stats: visibleSorted(stats),
+  brands: visibleSorted(brands),
+  services: visibleSorted(services),
+  categories: visibleSorted(categories),
+};
+
+/** One placeholder photo per category so /portfolio renders without Supabase. */
+export const fallbackPortfolioItems: PortfolioItem[] = categories.map((c) => ({
+  id: `item-${c.slug}`,
+  category_id: c.id,
+  brand_id: null,
+  image_url: PLACEHOLDER_IMAGES.category(c.slug),
+  alt_text: `Janmitha, ${c.title.toLowerCase()} (placeholder)`,
+  caption: null,
+  year: null,
+  is_featured: true,
+  is_visible: true,
+  sort_order: 1,
+  created_at: "2026-10-07T00:00:00.000Z",
+}));
