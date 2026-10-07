@@ -27,6 +27,7 @@ export function ListEditor({
           <li key={row.id}>
             <ActionForm
               action={mutateListRow}
+              shrinkFiles={withCover}
               className={`grid gap-4 rounded-[22px] border p-4 md:p-5 ${row.is_visible ? "border-glass-border bg-ink-raised" : "border-dashed border-glass-border bg-transparent opacity-80"}`}
             >
               <DefaultSave />
@@ -93,7 +94,7 @@ export function ListEditor({
       </ol>
 
       <Panel title={`Add ${itemLabel}`}>
-        <ActionForm action={createListRow} className="grid gap-4" resetOnSuccess>
+        <ActionForm action={createListRow} className="grid gap-4" resetOnSuccess shrinkFiles={withCover}>
           <input type="hidden" name="table" value={table} />
           <div className={`grid gap-4 ${fields.length > 1 && !fields.some((f) => f.multiline) ? "md:grid-cols-2" : ""}`}>
             {fields.map((f) => (

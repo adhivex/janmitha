@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Upload } from "lucide-react";
 import Image from "next/image";
-import { ActionForm, DefaultSave, SubmitButton } from "@/components/admin/ActionForm";
+import { ActionForm, DefaultSave, PhotoUploadForm, SubmitButton } from "@/components/admin/ActionForm";
 import { Checkbox, Field, Panel, inputClass, labelClass } from "@/components/admin/fields";
 import { ListEditor } from "@/components/admin/ListEditor";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -40,8 +40,8 @@ export default async function PortfolioAdmin() {
     <div className="grid gap-8">
       <h1 className="font-display text-[40px] leading-tight font-medium">Portfolio</h1>
 
-      <Panel title="Add photos" description="Pick one or more photos from your phone. JPG, PNG, WebP or AVIF, up to 10 MB each.">
-        <ActionForm action={uploadPhotos} className="grid gap-4" resetOnSuccess>
+      <Panel title="Add photos" description="Pick one or more photos from your phone (JPG, PNG, WebP or AVIF). Large photos are resized automatically before upload.">
+        <PhotoUploadForm action={uploadPhotos} fileField="photos" className="grid gap-4">
           <div>
             <label htmlFor="upload-photos" className={labelClass}>
               Photos
@@ -75,7 +75,7 @@ export default async function PortfolioAdmin() {
               Upload
             </SubmitButton>
           </div>
-        </ActionForm>
+        </PhotoUploadForm>
       </Panel>
 
       {categories.map((category) => {

@@ -2,6 +2,7 @@
 
 import { LoaderCircle } from "lucide-react";
 import { createContext, startTransition, use, useActionState, useEffect, useRef, useState } from "react";
+import { MAX_REQUEST_BYTES, downscaleImage, prepareFormData } from "@/lib/admin/prepare-upload";
 import type { ActionState } from "@/lib/admin/types";
 import { ToastContext } from "./Toast";
 
@@ -21,12 +22,15 @@ export function ActionForm({
   className = "",
   messageClassName = "",
   resetOnSuccess = false,
+  shrinkFiles = false,
 }: {
   action: Action;
   children: React.ReactNode;
   className?: string;
   messageClassName?: string;
   resetOnSuccess?: boolean;
+  /** Scale photos down in the browser before sending (keeps requests under Vercel's 4.5 MB). */
+  shrinkFiles?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const toast = use(ToastContext);
@@ -38,6 +42,7 @@ export function ActionForm({
     return result;
   }, null);
   const [submitter, setSubmitter] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
 
   useEffect(() => {
     if (resetOnSuccess && state?.ok) formRef.current?.reset();
@@ -47,17 +52,27 @@ export function ActionForm({
     <form
       ref={formRef}
       className={className}
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
         const button = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
         const confirmText = button?.dataset.confirm;
         if (confirmText && !window.confirm(confirmText)) return;
-        const data = new FormData(event.currentTarget, button);
+        let data = new FormData(event.currentTarget, button);
         setSubmitter(button?.name ? `${button.name}=${button.value}` : null);
+        if (shrinkFiles) {
+          setPreparing(true);
+          const prepared = await prepareFormData(data);
+          setPreparing(false);
+          if ("error" in prepared) {
+            toast?.({ ok: false, message: prepared.error });
+            return;
+          }
+          data = prepared.data;
+        }
         startTransition(() => dispatch(data));
       }}
     >
-      <FormStatus value={{ pending, submitter }}>{children}</FormStatus>
+      <FormStatus value={{ pending: pending || preparing, submitter }}>{children}</FormStatus>
       {/* Inside the admin the layout's toast shows the message; elsewhere (login) it shows inline. */}
       {!toast && (
         <p
@@ -125,5 +140,78 @@ export function DefaultSave() {
     <button type="submit" name="intent" value="save" tabIndex={-1} aria-hidden="true" className="sr-only">
       Save
     </button>
+  );
+}
+
+/**
+ * Multi-photo upload: every photo is scaled down in the browser and sent in its own
+ * request (all other fields repeated), so a batch from a phone never exceeds the
+ * per-request limit on Vercel. Progress and the result are reported via the toast.
+ */
+export function PhotoUploadForm({
+  action,
+  fileField,
+  children,
+  className = "",
+}: {
+  action: Action;
+  fileField: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const toast = use(ToastContext);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+
+  return (
+    <form
+      className={className}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const all = new FormData(form);
+        const files = all.getAll(fileField).filter((f): f is File => f instanceof File && f.size > 0);
+        all.delete(fileField);
+        if (files.length === 0) {
+          toast?.({ ok: false, message: "Choose at least one photo." });
+          return;
+        }
+        setBusy(true);
+        startTransition(async () => {
+          let added = 0;
+          let failure: string | null = null;
+          for (const [i, original] of files.entries()) {
+            setProgress(`Uploading ${i + 1} of ${files.length}`);
+            const file = await downscaleImage(original);
+            if (file.size > MAX_REQUEST_BYTES) {
+              failure = `${original.name} is too large to upload.`;
+              break;
+            }
+            const one = new FormData();
+            for (const [key, value] of all.entries()) one.append(key, value);
+            one.append(fileField, file, file.name);
+            const result = await action(null, one);
+            if (!result?.ok) {
+              failure = result?.message ?? "Upload failed.";
+              break;
+            }
+            added++;
+          }
+          setBusy(false);
+          setProgress(null);
+          const summary = added === 1 ? "1 photo added to the site." : `${added} photos added to the site.`;
+          if (failure) toast?.({ ok: false, message: added ? `${summary} Then: ${failure}` : failure });
+          else {
+            toast?.({ ok: true, message: summary });
+            form.reset();
+          }
+        });
+      }}
+    >
+      <FormStatus value={{ pending: busy, submitter: null }}>{children}</FormStatus>
+      <p aria-live="polite" className="text-[13px] text-text-muted empty:hidden">
+        {progress}
+      </p>
+    </form>
   );
 }
