@@ -32,6 +32,10 @@ npm run build && npx next start -p 3100
 `seed.dev.sql` demo photos for local use only). `npm run db:types` regenerates
 `src/types/database.ts` after a schema change.
 
+**Preview link:** https://janmitha.187-126-118-80.sslip.io (Caddy on the VPS proxies to
+`next start -H 127.0.0.1 -p 3100`; the site block is at the end of `/etc/caddy/Caddyfile` and
+sends `noindex`). After `npm run build`, restart that process to publish changes.
+
 Viewing from your own computer without opening any ports:
 
 ```bash
