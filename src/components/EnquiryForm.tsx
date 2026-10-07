@@ -1,45 +1,133 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowUpRight, LoaderCircle } from "lucide-react";
+import Script from "next/script";
+import { startTransition, useActionState, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { submitEnquiry } from "@/app/actions/enquiry";
+import { type EnquiryInput, type EnquiryState, enquirySchema } from "@/lib/enquiry-schema";
 import { btn } from "./ui";
 
-const field =
-  "mt-2 block min-h-12 w-full rounded-[14px] border border-glass-border bg-white/[0.04] px-4 py-3 text-[15px] text-text placeholder:text-text-fainter transition-[border-color,box-shadow] duration-300 focus:border-gold focus:shadow-[0_0_0_3px_rgb(217_176_115/0.25)] focus:outline-none";
-const label = "block text-[12px] font-normal tracking-[0.22em] text-text-muted uppercase";
+type Turnstile = {
+  render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+  reset: (id?: string) => void;
+};
+declare global {
+  interface Window {
+    turnstile?: Turnstile;
+  }
+}
 
-/**
- * Phase 1: markup, labels and client-side validation only.
- * Phase 3 replaces the submit handler with the Zod + Turnstile server action.
- */
-export function EnquiryForm({ email }: { email: string | null }) {
-  const [status, setStatus] = useState<"idle" | "pending">("idle");
+const field =
+  "mt-2 block min-h-12 w-full rounded-[14px] border bg-white/[0.04] px-4 py-3 text-[15px] text-text placeholder:text-text-fainter transition-[border-color,box-shadow] duration-300 focus:border-gold focus:shadow-[0_0_0_3px_rgb(217_176_115/0.25)] focus:outline-none";
+const label = "block text-[12px] font-normal tracking-[0.22em] text-text-muted uppercase";
+const errorText = "mt-2 text-[13px] text-[#F2B8A2]";
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const FIELDS = ["name", "brand", "email", "message"] as const;
+
+export function EnquiryForm() {
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+  const [state, dispatch, pending] = useActionState<EnquiryState, FormData>(submitEnquiry, { status: "idle" });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<EnquiryInput>({
+    resolver: zodResolver(enquirySchema),
+    defaultValues: { name: "", brand: "", email: "", message: "" },
+  });
+
+  const renderTurnstile = () => {
+    if (!SITE_KEY || !window.turnstile || !widgetRef.current || widgetId.current) return;
+    widgetId.current = window.turnstile.render(widgetRef.current, { sitekey: SITE_KEY, theme: "dark" });
+  };
+
+  useEffect(renderTurnstile, []);
+
+  useEffect(() => {
+    if (state.status === "success") reset();
+    if (state.status === "error" && state.fieldErrors) {
+      for (const key of FIELDS) {
+        const message = state.fieldErrors[key];
+        if (message) setError(key, { message });
+      }
+    }
+    if (state.status !== "idle" && widgetId.current) window.turnstile?.reset(widgetId.current);
+  }, [state, reset, setError]);
+
+  const onValid = (_values: EnquiryInput, event?: React.BaseSyntheticEvent) => {
+    const form = event?.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    const data = new FormData(form);
+    startTransition(() => dispatch(data));
+  };
+
+  const describe = (name: keyof EnquiryInput) => (errors[name] ? `enquiry-${name}-error` : undefined);
 
   return (
-    <form
-      className="grid gap-5 md:grid-cols-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setStatus("pending");
-      }}
-    >
+    <form noValidate onSubmit={handleSubmit(onValid)} className="grid gap-5 md:grid-cols-2">
+      {SITE_KEY && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="lazyOnload"
+          onReady={renderTurnstile}
+        />
+      )}
+
+      {/* Honeypot: hidden from people and assistive tech, tempting to bots. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label htmlFor="enquiry-website">Website</label>
+        <input id="enquiry-website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
+
       <div>
         <label htmlFor="enquiry-name" className={label}>
           Your Name
         </label>
-        <input id="enquiry-name" name="name" required minLength={2} maxLength={100} autoComplete="name" className={field} />
+        <input
+          id="enquiry-name"
+          autoComplete="name"
+          aria-invalid={!!errors.name}
+          aria-describedby={describe("name")}
+          className={`${field} ${errors.name ? "border-[#F2B8A2]" : "border-glass-border"}`}
+          {...register("name")}
+        />
+        {errors.name && <p id="enquiry-name-error" className={errorText}>{errors.name.message}</p>}
       </div>
       <div>
         <label htmlFor="enquiry-brand" className={label}>
           Brand / Company
         </label>
-        <input id="enquiry-brand" name="brand" maxLength={120} autoComplete="organization" className={field} />
+        <input
+          id="enquiry-brand"
+          autoComplete="organization"
+          aria-invalid={!!errors.brand}
+          aria-describedby={describe("brand")}
+          className={`${field} ${errors.brand ? "border-[#F2B8A2]" : "border-glass-border"}`}
+          {...register("brand")}
+        />
+        {errors.brand && <p id="enquiry-brand-error" className={errorText}>{errors.brand.message}</p>}
       </div>
       <div className="md:col-span-2">
         <label htmlFor="enquiry-email" className={label}>
           Email
         </label>
-        <input id="enquiry-email" name="email" type="email" required maxLength={200} autoComplete="email" className={field} />
+        <input
+          id="enquiry-email"
+          type="email"
+          autoComplete="email"
+          aria-invalid={!!errors.email}
+          aria-describedby={describe("email")}
+          className={`${field} ${errors.email ? "border-[#F2B8A2]" : "border-glass-border"}`}
+          {...register("email")}
+        />
+        {errors.email && <p id="enquiry-email-error" className={errorText}>{errors.email.message}</p>}
       </div>
       <div className="md:col-span-2">
         <label htmlFor="enquiry-message" className={label}>
@@ -47,22 +135,36 @@ export function EnquiryForm({ email }: { email: string | null }) {
         </label>
         <textarea
           id="enquiry-message"
-          name="message"
-          required
-          minLength={10}
-          maxLength={2000}
           rows={5}
-          className={`${field} resize-y`}
+          aria-invalid={!!errors.message}
+          aria-describedby={describe("message")}
+          className={`${field} resize-y ${errors.message ? "border-[#F2B8A2]" : "border-glass-border"}`}
+          {...register("message")}
         />
+        {errors.message && <p id="enquiry-message-error" className={errorText}>{errors.message.message}</p>}
       </div>
+
+      {SITE_KEY && <div ref={widgetRef} className="min-h-[65px] md:col-span-2" />}
+
       <div className="md:col-span-2">
-        <button type="submit" className={`${btn.gold} w-full md:w-auto`}>
-          Send Enquiry
-          <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+        <button
+          type="submit"
+          disabled={pending}
+          className={`${btn.gold} w-full disabled:cursor-wait disabled:opacity-70 md:w-auto`}
+        >
+          {pending ? "Sending" : "Send Enquiry"}
+          {pending ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={1.75} aria-hidden="true" />
+          ) : (
+            <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+          )}
         </button>
-        <p aria-live="polite" className="mt-4 min-h-[1.5em] text-[14px] leading-[1.6] text-text-soft">
-          {status === "pending" &&
-            `Online enquiries are not connected yet. Please email ${email ?? "[HER EMAIL]"} for now.`}
+        <p
+          aria-live="polite"
+          role="status"
+          className={`mt-4 min-h-[1.5em] text-[14px] leading-[1.6] ${state.status === "error" ? "text-[#F2B8A2]" : "text-text-soft"}`}
+        >
+          {state.status !== "idle" && state.message}
         </p>
       </div>
     </form>

@@ -72,7 +72,7 @@ export function Contact({ profile }: { profile: Profile }) {
             </ul>
           </div>
 
-          <EnquiryForm email={email} />
+          <EnquiryForm />
         </div>
       </div>
     </section>

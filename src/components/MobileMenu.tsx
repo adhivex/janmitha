@@ -6,13 +6,13 @@ import { MenuIcon, btn } from "./ui";
 
 const LINKS = [
   { href: "#story", label: "About" },
-  { href: "#gallery", label: "Portfolio" },
+  { href: "#gallery", label: "Portfolio", page: "/portfolio" },
   { href: "#collaborate", label: "Collaborate" },
   { href: "#contact", label: "Contact" },
 ];
 
 /** Full-screen menu sheet built on native <dialog> (focus containment + Esc for free). */
-export function MobileMenu() {
+export function MobileMenu({ onHome = true }: { onHome?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -81,8 +81,8 @@ export function MobileMenu() {
               {LINKS.map((l, i) => (
                 <li key={l.href} className="border-t border-gold-line last:border-b">
                   <a
-                    href={l.href}
-                    onClick={(e) => go(e, l.href)}
+                    href={onHome ? l.href : (l.page ?? `/${l.href}`)}
+                    onClick={onHome ? (e) => go(e, l.href) : close}
                     className="flex min-h-[72px] items-center gap-5 font-display text-[40px] font-medium leading-none transition-[padding,color] duration-300 hover:pl-3 hover:text-gold"
                   >
                     <span className="w-8 font-display text-[16px] text-gold">0{i + 1}</span>
