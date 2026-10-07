@@ -30,6 +30,8 @@ Read these before writing code:
 - `npm run dev`: local dev
 - `npm run build`: must pass before any task is called done
 - `npm run lint` and `npm run typecheck`
+- `npm run db:start` / `db:reset` / `db:types`: local Supabase stack (ports 55020-55029)
+- `npm run admin:create -- <email> [password]`: add an admin login
 
 ## Definition of done for any task
 - Works and looks right at 390px, 768px and 1280px

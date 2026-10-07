@@ -47,7 +47,7 @@ export function Gallery({ photos }: { photos: GalleryPhoto[] }) {
               type="button"
               onClick={() => open(i)}
               aria-haspopup="dialog"
-              aria-label={`Open photo ${i + 1} of ${photos.length}: ${photo.alt || photo.category}`}
+              aria-label={`${photo.category}: open photo ${i + 1} of ${photos.length}${photo.alt ? `, ${photo.alt}` : ""}`}
               className="group relative block aspect-[3/4] w-full overflow-hidden rounded-[22px] bg-ink-raised-2 md:rounded-[26px]"
             >
               <Image
@@ -63,7 +63,7 @@ export function Gallery({ photos }: { photos: GalleryPhoto[] }) {
               />
               <span
                 aria-hidden="true"
-                className="absolute bottom-3 left-4 text-[10px] tracking-[0.16em] text-text uppercase md:bottom-4 md:left-5"
+                className="absolute bottom-3 left-4 text-[12px] tracking-[0.14em] text-text uppercase md:bottom-4 md:left-5"
               >
                 {photo.category}
               </span>

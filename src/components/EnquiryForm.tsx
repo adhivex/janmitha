@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowUpRight, LoaderCircle } from "lucide-react";
 import Script from "next/script";
-import { startTransition, useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { submitEnquiry } from "@/app/actions/enquiry";
 import { type EnquiryInput, type EnquiryState, enquirySchema } from "@/lib/enquiry-schema";
@@ -30,6 +30,25 @@ const FIELDS = ["name", "brand", "email", "message"] as const;
 export function EnquiryForm() {
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
+  // Load Turnstile only once the form is close to the viewport, so the spam check
+  // never competes with the hero for bandwidth or main-thread time.
+  const [nearby, setNearby] = useState(false);
+
+  useEffect(() => {
+    const el = widgetRef.current;
+    if (!SITE_KEY || !el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNearby(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const [state, dispatch, pending] = useActionState<EnquiryState, FormData>(submitEnquiry, { status: "idle" });
 
   const {
@@ -72,10 +91,10 @@ export function EnquiryForm() {
 
   return (
     <form noValidate onSubmit={handleSubmit(onValid)} className="grid gap-5 md:grid-cols-2">
-      {SITE_KEY && (
+      {SITE_KEY && nearby && (
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
           onReady={renderTurnstile}
         />
       )}
