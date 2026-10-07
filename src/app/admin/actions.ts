@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { UploadError, pickFile, removeUploaded, uploadFile } from "@/lib/admin/storage";
 import type { ActionState } from "@/lib/admin/types";
 import { TAGS } from "@/lib/queries";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /* ------------------------------------------------------------------ helpers */
@@ -44,6 +45,7 @@ export async function signIn(_prev: ActionState, fd: FormData): Promise<ActionSt
   const email = text(fd, "email", 200);
   const password = String(fd.get("password") ?? "");
   if (!email || !password) return fail("Enter your email and password.");
+  if (!getSupabaseConfig()) return fail("The admin isn't connected to a database yet.");
 
   const supabase = await createSessionClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });

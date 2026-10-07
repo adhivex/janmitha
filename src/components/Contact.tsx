@@ -1,7 +1,7 @@
 import { Download, Mail, MapPin } from "lucide-react";
 import type { Profile } from "@/lib/content";
 import { isRealValue } from "@/lib/site";
-import { toSiteHref } from "@/lib/supabase/config";
+import { getSupabaseConfig, toSiteHref } from "@/lib/supabase/config";
 import { EnquiryDialog } from "./EnquiryDialog";
 import { InstagramIcon, LinkedInIcon, btn } from "./ui";
 
@@ -42,7 +42,15 @@ export function Contact({ profile }: { profile: Profile }) {
           </ul>
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <EnquiryDialog />
+            {getSupabaseConfig() ? (
+              <EnquiryDialog />
+            ) : (
+              // No database yet (placeholder deployment): enquiries can't be stored.
+              <button type="button" disabled className={`${btn.gold.replace("lift ", "")} cursor-not-allowed opacity-60`}>
+                Send an Enquiry
+                <span className="sr-only">(coming soon)</span>
+              </button>
+            )}
             {profile.media_kit_url ? (
               <a href={toSiteHref(profile.media_kit_url)} download className={btn.ghost}>
                 <Download className="h-4 w-4 text-gold" strokeWidth={1.5} aria-hidden="true" />
