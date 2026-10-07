@@ -60,13 +60,28 @@ See `.env.example`. Server-only secrets: `SUPABASE_SERVICE_ROLE_KEY` (used only 
 - Edits made directly in Supabase (not via /admin) show up within 5 minutes, or immediately with
   `curl -X POST -H "x-revalidate-secret: $REVALIDATE_SECRET" https://<site>/api/revalidate`.
 
-## Going live (Vercel + hosted Supabase)
+## Vercel (production: https://www.janmitha.in)
 
-1. Create a Supabase project, run `supabase/migrations/0001_init.sql` and `supabase/seed.sql`
-   (not `seed.dev.sql`).
-2. Set the env vars on Vercel with the real Turnstile, Resend and `NEXT_PUBLIC_SITE_URL` values.
-3. Create Janmitha's admin login with `npm run admin:create` pointed at the hosted project.
-4. Replace placeholders (see below) through `/admin`.
+The GitHub repo `adhivex/janmitha` is connected to the Vercel project `janmitha`: every push to
+`main` deploys production. Functions run in `bom1` (Mumbai, `vercel.json`), next to the Supabase
+project. `janmitha.in` redirects (308) to `www.janmitha.in`.
+
+Environment variables (Vercel → Settings → Environment Variables, Production):
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Hosted Supabase project (Mumbai) |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.janmitha.in` |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile (test keys until real ones are added) |
+| `RESEND_API_KEY`, `ENQUIRY_TO_EMAIL`, `ENQUIRY_FROM_EMAIL` | Optional: enquiry emails |
+| `REVALIDATE_SECRET` | For `POST /api/revalidate` |
+
+The service-role key is not stored on Vercel; it is only needed locally for
+`scripts/create-admin.mjs`. Schema changes: apply `supabase/migrations` to the hosted project
+(`npx supabase db push --db-url <connection string>`); never run `seed.dev.sql` there.
+Admin uploads are scaled down in the browser so each request stays under Vercel's 4.5 MB limit.
+
+DNS (GoDaddy): `A @ 216.198.79.1` and `CNAME www 231bad7a077e392c.vercel-dns-017.com`.
 
 ## Placeholders still open
 
